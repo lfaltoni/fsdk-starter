@@ -1,0 +1,3 @@
+foundation-sdk
+flask-cors
+python-dotenv
