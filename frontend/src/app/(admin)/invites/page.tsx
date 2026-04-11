@@ -84,7 +84,7 @@ export default function InvitesPage() {
             inv.status === 'pending' ? (
               <button
                 key="revoke"
-                onClick={() => handleRevoke(inv.invite_id)}
+                onClick={() => handleRevoke(inv.id)}
                 className="text-xs text-red-500 hover:text-red-700"
               >
                 Revoke

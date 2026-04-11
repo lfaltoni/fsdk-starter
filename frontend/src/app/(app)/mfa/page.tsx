@@ -43,7 +43,7 @@ export default function MfaPage() {
       <PageHeader title="Multi-Factor Authentication" subtitle="Add an extra layer of security to your account" />
 
       <div className="max-w-md space-y-6">
-        {error?.includes('404') || error?.includes('not configured') ? (
+        {error && (error.includes('404') || error.includes('Not Found') || error.includes('not configured') || error.includes('Failed to load MFA status')) ? (
           <div className="rounded-md bg-yellow-50 p-4 text-sm text-yellow-700">
             MFA is not enabled on this server. Set <code className="bg-yellow-100 px-1 rounded">MFA_HMAC_KEY</code> in your backend <code className="bg-yellow-100 px-1 rounded">.env</code> to enable it.
           </div>
