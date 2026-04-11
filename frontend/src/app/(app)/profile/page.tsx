@@ -8,30 +8,30 @@ import ErrorMessage from '@/components/ErrorMessage'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function ProfilePage() {
-  const { user, profile, isLoading, error, updateUser, refreshUser, clearAllErrors } = useAccount()
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
+  const { user, profile, isLoading, error, updateProfile, refreshProfile, clearAllErrors } = useAccount()
+  const [bio, setBio] = useState('')
+  const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    refreshUser()
+    refreshProfile()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    if (user) {
-      setFirstName(user.first_name || '')
-      setLastName(user.last_name || '')
+    if (profile) {
+      setBio(profile.bio || '')
+      setPhone(profile.phone || '')
     }
-  }, [user])
+  }, [profile])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setSaving(true)
     setSuccess(false)
     try {
-      await updateUser({ first_name: firstName, last_name: lastName })
+      await updateProfile({ ...profile, bio, phone })
       setSuccess(true)
     } catch {
       // error set by hook
@@ -54,20 +54,23 @@ export default function ProfilePage() {
         )}
 
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <p className="text-sm text-gray-500 mb-4">Email: <span className="font-medium text-gray-900">{user?.email}</span></p>
+          <div className="space-y-2 mb-6">
+            <p className="text-sm text-gray-500">Email: <span className="font-medium text-gray-900">{user?.email}</span></p>
+            <p className="text-sm text-gray-500">Name: <span className="font-medium text-gray-900">{user?.first_name} {user?.last_name}</span></p>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <FormField
-              label="First name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
+              label="Bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell us about yourself"
             />
             <FormField
-              label="Last name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
+              label="Phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 234 567 8900"
             />
             <button
               type="submit"
