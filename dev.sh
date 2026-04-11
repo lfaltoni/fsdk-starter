@@ -55,7 +55,18 @@ if [ ! -f "$ROOT_DIR/server/.env" ]; then
   cp "$ROOT_DIR/server/.env.example" "$ROOT_DIR/server/.env"
 fi
 
+# Ensure foundation-sdk is installed from local copy
+if ! python3 -c "import foundation" 2>/dev/null; then
+  echo -e "${YELLOW}[setup]${NC} Installing foundation-sdk..."
+  pip3 install -e "$ROOT_DIR/foundation-sdk" -q
+fi
+
 mkdir -p "$ROOT_DIR/server/instance"
+
+if [ ! -d "$ROOT_DIR/fsdk-ts/dist" ]; then
+  echo -e "${YELLOW}[setup]${NC} Building fsdk-ts..."
+  (cd "$ROOT_DIR/fsdk-ts" && npm install && npm run build)
+fi
 
 if [ ! -d "$ROOT_DIR/frontend/node_modules" ]; then
   echo -e "${YELLOW}[setup]${NC} Installing frontend dependencies..."

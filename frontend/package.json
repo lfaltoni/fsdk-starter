@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "fsdk-ts": "file:../../rihla/fsdk-ts",
+    "fsdk-ts": "file:../fsdk-ts",
     "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
