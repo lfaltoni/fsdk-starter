@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useAudit } from 'frontend-lib'
+import { useAudit } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import FormField from '@/components/FormField'
 import DataTable from '@/components/DataTable'

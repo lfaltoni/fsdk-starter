@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useMfa } from 'frontend-lib'
+import { useMfa } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import FormField from '@/components/FormField'
 import ErrorMessage from '@/components/ErrorMessage'

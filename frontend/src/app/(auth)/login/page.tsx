@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useLogin } from 'frontend-lib'
+import { useLogin } from 'fsdk-ts'
 import FormField from '@/components/FormField'
 import ErrorMessage from '@/components/ErrorMessage'
 

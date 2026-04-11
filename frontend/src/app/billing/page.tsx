@@ -1,6 +1,6 @@
 'use client'
 
-import { useBilling } from 'frontend-lib'
+import { useBilling } from 'fsdk-ts'
 import NavBar from '@/components/NavBar'
 import PageHeader from '@/components/PageHeader'
 import ErrorMessage from '@/components/ErrorMessage'

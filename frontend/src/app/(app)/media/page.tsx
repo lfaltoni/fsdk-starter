@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { mediaApi, useAuth } from 'frontend-lib'
-import type { MediaItem } from 'frontend-lib'
+import { mediaApi, useAuth } from 'fsdk-ts'
+import type { MediaItem } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import ErrorMessage from '@/components/ErrorMessage'
 import LoadingSpinner from '@/components/LoadingSpinner'

@@ -265,6 +265,8 @@ admin_session_blp = create_admin_session_blueprint()
 api.register_blueprint(admin_session_blp)
 
 # Invites
+from foundation.invites import PlatformInviteService
+app.invite_service = PlatformInviteService(audit_service=app.audit_service)
 from foundation.invites.api import invites_blp, invite_token_blp
 api.register_blueprint(invites_blp)
 api.register_blueprint(invite_token_blp)
@@ -336,14 +338,14 @@ def seed_admin():
             return
         try:
             new_user = user_service.create_user(
-                email='admin@starter.local',
-                password='admin123',
+                email='admin@admin.com',
+                password='admin',
                 first_name='Admin',
                 last_name='User',
             )
             new_user.platform_role = 'super_admin'
             db.session.commit()
-            print(f'Admin created: admin@starter.local / admin123')
+            print(f'Admin created: admin@admin.com / admin')
         except Exception as e:
             print(f'Failed to create admin: {e}')
 

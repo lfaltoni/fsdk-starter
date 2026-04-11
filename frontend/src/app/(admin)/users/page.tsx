@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useAdmin } from 'frontend-lib'
+import { useAdmin } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import DataTable from '@/components/DataTable'
 import Pagination from '@/components/Pagination'

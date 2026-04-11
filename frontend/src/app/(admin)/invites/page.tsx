@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent, useEffect } from 'react'
-import { useInvites } from 'frontend-lib'
+import { useInvites } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import FormField from '@/components/FormField'
 import DataTable from '@/components/DataTable'

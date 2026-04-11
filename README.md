@@ -1,39 +1,29 @@
 # FSDK Starter
 
-Full-stack template app built on [foundation-sdk](https://github.com/lfaltoni/foundation-sdk) and [frontend-lib](https://github.com/lfaltoni/frontend-lib). Every foundation-sdk domain is pre-wired — clone this and build your product on top.
+Full-stack template app built on [foundation-sdk](https://github.com/lfaltoni/foundation-sdk) and [fsdk-ts](https://github.com/lfaltoni/fsdk-ts). Every foundation-sdk domain is pre-wired — clone this and build your product on top.
 
 ## Quick Start
 
 ```bash
-# 1. Set up backend
-cd server
-cp .env.example .env
-pip install -e ../../foundation-sdk
-pip install flask-cors python-dotenv
-
-# 2. Set up frontend
-cd ../frontend
-cp .env.local.example .env.local
-npm install
-
-# 3. Build frontend-lib (required — dist/ is gitignored)
-cd ../../frontend-lib
-npm install && npm run build
-cd ../fsdk-starter
-
-# 4. Run
 ./dev.sh
-# Backend → http://localhost:5001
+# Backend  → http://localhost:5001
 # Frontend → http://localhost:3000
+# Admin    → admin@admin.com / admin
 ```
 
-## Seed Admin User
+`dev.sh` handles first-run setup automatically:
+- Creates `server/.env` from `.env.example` if missing
+- Runs `npm install --install-links` if `node_modules/` doesn't exist
+- Seeds an admin user (`admin@admin.com` / `admin`)
+- Starts both backend and frontend
 
-```bash
-cd server
-python app.py --seed-admin
-# Creates: admin@starter.local / admin123 (super_admin role)
-```
+Use `./dev.sh --no-seed` to skip seeding on subsequent runs.
+
+### Prerequisites
+
+- Python 3.12+ with `foundation-sdk` installed (`pip install -e ../path/to/foundation-sdk`)
+- Node.js 18+
+- [fsdk-ts](https://github.com/lfaltoni/fsdk-ts) built (`dist/` is gitignored) — the frontend references it via `file:` path
 
 ## File Structure
 
@@ -113,15 +103,11 @@ fsdk-starter/
 
 ### JWT-to-Session Bridge
 
-frontend-lib sends JWT Bearer tokens via `foundationRequest`. foundation-sdk blueprints authenticate via Flask-Login sessions (`@login_required`). In dev, the frontend (`:3000`) and backend (`:5001`) are different origins, so session cookies don't survive cross-origin requests.
+fsdk-ts sends JWT Bearer tokens via `foundationRequest`. foundation-sdk blueprints authenticate via Flask-Login sessions (`@login_required`). In dev, the frontend (`:3000`) and backend (`:5001`) are different origins, so session cookies don't survive cross-origin requests.
 
 `server/app.py` includes a `@app.before_request` hook that decodes the JWT from the `Authorization` header and calls `login_user()`, bridging the two auth systems transparently. All `@login_required` and `@require_platform_admin` decorators work without modification.
 
 If you remove this hook, all authenticated API calls from the frontend will fail with 401.
-
-### SameSite Cookie Configuration
-
-`SameSite=None` cookies require `Secure` (HTTPS). In local dev over HTTP, the backend sets `SameSite=Lax` instead. This is controlled by the `ENVIRONMENT` env var — `development` uses `Lax`, anything else uses `None` + `Secure`.
 
 ### Optional Domains
 
@@ -130,19 +116,19 @@ MFA, billing, and tenancy are env-gated. When their env vars are empty/false, th
 - **Billing** — hidden from nav when `NEXT_PUBLIC_ENABLE_BILLING` is not `true`
 - **Media** — treats 404 on gallery as empty (no uploads yet)
 
-### Creating Users Programmatically
+### Turbopack + fsdk-ts
 
-Use `user_service.create_user()`, not `auth_service.register()`. The auth service only validates credentials and returns a result — it does not create the User model, profile, or run lifecycle hooks. `user_service.create_user()` handles the full pipeline: auth registration, User + UserProfile creation, lifecycle hooks, and commit.
+Turbopack cannot follow symlinks outside the project root. The frontend's `package.json` references fsdk-ts via `"file:../../rihla/fsdk-ts"` — use `npm install --install-links` so the dependency is copied into `node_modules/` instead of symlinked. `dev.sh` handles this automatically.
 
 ## Adding Your Own Domain
 
 1. Add a blueprint to `server/app.py` (follow the existing patterns)
-2. Add types, API client, and hook to `frontend-lib` (see `frontend-lib/ARCHITECTURE.md`)
+2. Add types, API client, and hook to `fsdk-ts` (see `fsdk-ts/ARCHITECTURE.md`)
 3. Add a page under `frontend/src/app/`
-4. Import the hook from `frontend-lib` and wire it up
+4. Import the hook from `fsdk-ts` and wire it up
 
 ## Tech Stack
 
 - **Backend:** Flask + foundation-sdk (SQLite, Flask-Smorest, Flask-Login)
-- **Frontend:** Next.js 15 (App Router, Turbopack) + frontend-lib (React hooks)
+- **Frontend:** Next.js 15 (App Router, Turbopack) + fsdk-ts (React hooks)
 - **Styling:** Tailwind CSS v4

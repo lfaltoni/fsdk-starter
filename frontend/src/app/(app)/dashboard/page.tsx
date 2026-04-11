@@ -1,6 +1,6 @@
 'use client'
 
-import { useAuth } from 'frontend-lib'
+import { useAuth } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import Link from 'next/link'
 

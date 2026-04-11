@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent, useEffect } from 'react'
-import { useAccount } from 'frontend-lib'
+import { useAccount } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import FormField from '@/components/FormField'
 import ErrorMessage from '@/components/ErrorMessage'
@@ -16,7 +16,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     refreshUser()
-  }, [refreshUser])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (user) {

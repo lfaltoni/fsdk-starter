@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useAuth } from 'frontend-lib'
+import { useAuth } from 'fsdk-ts'
 
 export default function NavBar() {
   const { user, isAuthenticated, logout } = useAuth()

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from 'frontend-lib'
+import { useAuth } from 'fsdk-ts'
 import NavBar from '@/components/NavBar'
 import LoadingSpinner from '@/components/LoadingSpinner'
 

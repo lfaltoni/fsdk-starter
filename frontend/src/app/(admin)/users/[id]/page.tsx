@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useAdmin } from 'frontend-lib'
+import { useAdmin } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import ErrorMessage from '@/components/ErrorMessage'
 import LoadingSpinner from '@/components/LoadingSpinner'

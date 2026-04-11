@@ -3,7 +3,7 @@
 import { Suspense, useState, FormEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { usePasswordReset } from 'frontend-lib'
+import { usePasswordReset } from 'fsdk-ts'
 import FormField from '@/components/FormField'
 import ErrorMessage from '@/components/ErrorMessage'
 import LoadingSpinner from '@/components/LoadingSpinner'
