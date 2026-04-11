@@ -66,9 +66,9 @@ db.init_app(app)
 # 3. Audit Service (no dependencies — others depend on it)
 # ============================================================================
 
-from foundation.audit import AuditService
+from foundation.audit import configure_audit
 
-app.audit_service = AuditService(app_id='fsdk-starter')
+configure_audit(app, app_id='fsdk-starter')
 
 # ============================================================================
 # 4. Email
@@ -76,7 +76,7 @@ app.audit_service = AuditService(app_id='fsdk-starter')
 
 from foundation.email import configure_email
 
-configure_email(app, audit_service=app.audit_service)
+configure_email(app)
 
 # ============================================================================
 # 5. MFA (depends on email service)
@@ -86,12 +86,9 @@ from foundation.mfa import MfaService
 
 _mfa_hmac_key = os.getenv('MFA_HMAC_KEY', '')
 if _mfa_hmac_key:
-    _email_service = app.extensions.get('email_service')
     app.mfa_service = MfaService(
-        email_service=_email_service,
         hmac_key=_mfa_hmac_key.encode(),
         app_name=app.config['APP_NAME'],
-        audit_service=app.audit_service,
     )
     logger.info('MFA service enabled')
 else:
@@ -143,7 +140,6 @@ from foundation.admin import AdminUserService
 
 app.admin_user_service = AdminUserService(
     mfa_service=app.mfa_service,
-    audit_service=app.audit_service,
 )
 
 # ============================================================================
@@ -266,7 +262,7 @@ api.register_blueprint(admin_session_blp)
 
 # Invites
 from foundation.invites import PlatformInviteService
-app.invite_service = PlatformInviteService(audit_service=app.audit_service)
+app.invite_service = PlatformInviteService()
 from foundation.invites.api import invites_blp, invite_token_blp
 api.register_blueprint(invites_blp)
 api.register_blueprint(invite_token_blp)
