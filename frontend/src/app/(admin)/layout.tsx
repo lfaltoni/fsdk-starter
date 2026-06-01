@@ -2,23 +2,25 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from 'fsdk-ts'
+import { useAuth, useRequireAuth } from 'fsdk-ts'
 import NavBar from '@/components/NavBar'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, isAuthenticated, isLoading } = useAuth()
+  // useRequireAuth owns the authenticated/unauthenticated redirect (gated on
+  // authResolved). The super_admin role gate is app-specific, so it stays here,
+  // layered on top of the guard's resolved state via useAuth().user.
+  const { user } = useAuth()
+  const { isAuthenticated, isLoading } = useRequireAuth({
+    onUnauthenticated: () => router.replace('/login'),
+  })
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.replace('/login')
-      } else if (user?.platform_role !== 'super_admin') {
-        router.replace('/dashboard')
-      }
+    if (!isLoading && isAuthenticated && user?.platform_role !== 'super_admin') {
+      router.replace('/dashboard')
     }
-  }, [isAuthenticated, isLoading, user, router])
+  }, [isLoading, isAuthenticated, user, router])
 
   if (isLoading) return <LoadingSpinner className="mt-32" />
   if (!isAuthenticated || user?.platform_role !== 'super_admin') return null

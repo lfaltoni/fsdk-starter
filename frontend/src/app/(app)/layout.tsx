@@ -1,20 +1,17 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from 'fsdk-ts'
+import { useRequireAuth } from 'fsdk-ts'
 import NavBar from '@/components/NavBar'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { isAuthenticated, isLoading } = useAuth()
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/login')
-    }
-  }, [isAuthenticated, isLoading, router])
+  // Centralized guard: gates on authResolved (not the action-feedback isLoading),
+  // so a valid-but-unrevalidated session is not kicked to /login on first paint.
+  const { isAuthenticated, isLoading } = useRequireAuth({
+    onUnauthenticated: () => router.replace('/login'),
+  })
 
   if (isLoading) return <LoadingSpinner className="mt-32" />
   if (!isAuthenticated) return null
