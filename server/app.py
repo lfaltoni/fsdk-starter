@@ -119,7 +119,8 @@ import importlib
 from foundation.core.lifecycle import UserLifecycleRegistry
 
 LIFECYCLE_MODULES = [
-    'foundation.users.hooks',  # UserApplicationStats + welcome email
+    'foundation.users.hooks',     # UserApplicationStats + welcome email
+    'foundation.sessions.hooks',  # delete session rows when a user is deleted
 ]
 
 for module_path in LIFECYCLE_MODULES:
@@ -156,6 +157,20 @@ storage_provider = LocalStorageProvider(
     base_url=os.getenv('MEDIA_BASE_URL', f"http://localhost:{os.getenv('PORT', '5001')}"),
 )
 app.media_service = MediaService(storage_provider)
+
+# ============================================================================
+# 9b. Sessions (active session / device registry)
+# ============================================================================
+# Default-on backend tracking + per-session revocation gate. Calling
+# configure_sessions registers the service for auto-discovery by the auth layer;
+# registering sessions_blp (below) surfaces the "your devices" UI.
+
+from foundation.sessions import configure_sessions
+
+# Collaborators (audit/email) are omitted here so they are auto-discovered at
+# request time from app.extensions; pass a geo_resolver via SESSION_GEO_RESOLVER
+# config to enable approximate locations (FSDK ships none).
+configure_sessions(app, app_name=app.config['APP_NAME'])
 
 # ============================================================================
 # 10. Flask-Login
@@ -217,6 +232,7 @@ from foundation.reviews.models import Review, ReviewReply, ReviewVote  # noqa: F
 from foundation.mfa.models import MfaEnrollment, MfaChallenge  # noqa: F401
 from foundation.audit.models import AuditEntry  # noqa: F401
 from foundation.invites.models import PlatformInvite  # noqa: F401
+from foundation.sessions.models import UserSession  # noqa: F401
 
 # ============================================================================
 # 14. Blueprint Registration
@@ -254,6 +270,10 @@ if app.mfa_service:
 # Audit
 from foundation.audit.api import audit_blp
 api.register_blueprint(audit_blp)
+
+# Sessions (active session / device management — "your devices" UI)
+from foundation.sessions.api import sessions_blp
+api.register_blueprint(sessions_blp)
 
 # Admin user management (session-auth version for the frontend)
 from foundation.admin import create_admin_session_blueprint

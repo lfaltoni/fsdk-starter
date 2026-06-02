@@ -22,6 +22,7 @@ export default function NavBar() {
                 <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">Dashboard</Link>
                 <Link href="/profile" className="text-sm text-gray-600 hover:text-gray-900">Profile</Link>
                 <Link href="/mfa" className="text-sm text-gray-600 hover:text-gray-900">MFA</Link>
+                <Link href="/sessions" className="text-sm text-gray-600 hover:text-gray-900">Sessions</Link>
                 <Link href="/reviews" className="text-sm text-gray-600 hover:text-gray-900">Reviews</Link>
                 <Link href="/media" className="text-sm text-gray-600 hover:text-gray-900">Media</Link>
                 {billingEnabled && (
@@ -36,6 +37,7 @@ export default function NavBar() {
                 <Link href="/users" className="text-sm text-indigo-600 hover:text-indigo-800">Users</Link>
                 <Link href="/audit" className="text-sm text-indigo-600 hover:text-indigo-800">Audit</Link>
                 <Link href="/invites" className="text-sm text-indigo-600 hover:text-indigo-800">Invites</Link>
+                <Link href="/content" className="text-sm text-indigo-600 hover:text-indigo-800">Content</Link>
               </>
             )}
           </div>
