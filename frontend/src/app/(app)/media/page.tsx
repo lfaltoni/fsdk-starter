@@ -22,7 +22,7 @@ export default function MediaPage() {
     setIsLoading(true)
     try {
       const gallery = await mediaApi.getGallery(ENTITY_TYPE, ENTITY_ID)
-      setItems(gallery.items || gallery)
+      setItems(gallery)
     } catch (e: any) {
       // 404 means no media yet — not an error
       if (e.status === 404 || e.message?.includes('404')) {
@@ -45,7 +45,7 @@ export default function MediaPage() {
     setUploading(true)
     setError(null)
     try {
-      await mediaApi.upload(file, ENTITY_TYPE, ENTITY_ID)
+      await mediaApi.uploadMedia(ENTITY_TYPE, ENTITY_ID, file)
       loadMedia()
       if (fileRef.current) fileRef.current.value = ''
     } catch (e: any) {
@@ -55,10 +55,10 @@ export default function MediaPage() {
     }
   }
 
-  const handleDelete = async (mediaId: string) => {
+  const handleDelete = async (mediaId: number) => {
     try {
-      await mediaApi.delete(mediaId)
-      setItems(items.filter((i) => (i as any).media_id !== mediaId && (i as any).mediaId !== mediaId))
+      await mediaApi.deleteMedia(mediaId)
+      setItems(items.filter((i) => i.id !== mediaId))
     } catch (e: any) {
       setError(e.message || 'Delete failed')
     }
@@ -87,9 +87,9 @@ export default function MediaPage() {
         <p className="text-sm text-gray-400">No media uploaded yet.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {items.map((item: any) => {
-            const id = item.media_id || item.mediaId
-            const url = item.url || item.file_url
+          {items.map((item) => {
+            const id = item.id
+            const url = item.url
             return (
               <div key={id} className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                 {url && (

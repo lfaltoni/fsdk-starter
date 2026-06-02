@@ -29,7 +29,7 @@ export default function ReviewsPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     try {
-      await createReview({ rating, title, comment })
+      await createReview({ rating, title, content: comment })
       setTitle('')
       setComment('')
       setRating(5)
@@ -50,7 +50,7 @@ export default function ReviewsPage() {
             {stats ? (
               <>
                 <p className="text-3xl font-bold text-gray-900">{stats.averageRating?.toFixed(1) || '—'}</p>
-                <p className="text-sm text-gray-500">{stats.totalReviews || 0} reviews</p>
+                <p className="text-sm text-gray-500">{stats.totalCount || 0} reviews</p>
               </>
             ) : (
               <p className="text-sm text-gray-400">No stats yet</p>
@@ -106,22 +106,22 @@ export default function ReviewsPage() {
           ) : (
             <>
               {reviews.map((review) => (
-                <div key={review.reviewId} className="rounded-lg border border-gray-200 bg-white p-5">
+                <div key={review.id} className="rounded-lg border border-gray-200 bg-white p-5">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <span className="text-sm font-semibold text-gray-900">{review.title}</span>
                       <span className="ml-2 text-xs text-yellow-500">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
                     </div>
                     <button
-                      onClick={() => toggleHelpful(review.reviewId)}
+                      onClick={() => toggleHelpful(review.id)}
                       className="text-xs text-gray-400 hover:text-blue-600"
                     >
                       Helpful ({review.helpfulCount ?? 0})
                     </button>
                   </div>
-                  <p className="text-sm text-gray-600">{review.comment}</p>
+                  <p className="text-sm text-gray-600">{review.content}</p>
                   <p className="mt-2 text-xs text-gray-400">
-                    by {review.reviewerName || 'Anonymous'}
+                    by {review.authorName || 'Anonymous'}
                   </p>
                 </div>
               ))}

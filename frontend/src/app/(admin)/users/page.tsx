@@ -41,7 +41,7 @@ export default function UsersPage() {
           />
           <Pagination
             page={page}
-            hasNext={meta?.has_next ?? false}
+            hasNext={meta ? meta.page < meta.pages : false}
             onPrev={() => setPage((p) => Math.max(1, p - 1))}
             onNext={() => setPage((p) => p + 1)}
           />

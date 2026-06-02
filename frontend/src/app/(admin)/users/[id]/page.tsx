@@ -43,7 +43,7 @@ export default function UserDetailPage() {
 
           <div className="flex gap-3">
             <button
-              onClick={() => setAccountStatus(user.user_id, { is_active: !user.is_active })}
+              onClick={() => setAccountStatus(user.user_id, !user.is_active)}
               disabled={isSubmitting}
               className={`rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${
                 user.is_active !== false ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'

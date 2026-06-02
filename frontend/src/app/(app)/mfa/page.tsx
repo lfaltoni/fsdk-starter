@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useMfa } from 'fsdk-ts'
+import { useMfa, useAuth } from 'fsdk-ts'
 import PageHeader from '@/components/PageHeader'
 import FormField from '@/components/FormField'
 import ErrorMessage from '@/components/ErrorMessage'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function MfaPage() {
+  const { user } = useAuth()
   const {
     enrolled, isLoading, isSubmitting, error,
     beginEnrollment, confirmEnrollment, unenroll,
@@ -18,7 +19,8 @@ export default function MfaPage() {
   const [step, setStep] = useState<'idle' | 'enrolling' | 'verifying'>('idle')
 
   const handleBeginEnroll = async () => {
-    const result = await beginEnrollment()
+    if (!user?.email) return
+    const result = await beginEnrollment(user.email)
     if (result) setStep('enrolling')
   }
 

@@ -7,7 +7,9 @@ import ErrorMessage from '@/components/ErrorMessage'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function BillingPage() {
-  const { subscription, plans, isLoading, error, checkout, manageSubscription, clearError } = useBilling()
+  const { summary, availablePlans, isLoading, error, checkout, manageSubscription, clearError } = useBilling()
+  const subscription = summary?.subscription
+  const plans = availablePlans
 
   return (
     <>
@@ -35,7 +37,7 @@ export default function BillingPage() {
                     <span className="font-medium">{(subscription as any).status || 'active'}</span>
                   </p>
                   <button
-                    onClick={() => manageSubscription()}
+                    onClick={() => manageSubscription(window.location.href)}
                     className="mt-3 rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
                   >
                     Manage subscription
@@ -57,7 +59,7 @@ export default function BillingPage() {
                       <p className="text-sm text-gray-500">{plan.description || ''}</p>
                     </div>
                     <button
-                      onClick={() => checkout(plan.price_id || plan.id)}
+                      onClick={() => checkout(plan.price_id || plan.id, window.location.href, window.location.href)}
                       className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
                     >
                       Subscribe
