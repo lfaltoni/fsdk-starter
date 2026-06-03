@@ -51,6 +51,7 @@ fsdk-starter/
           mfa/page.tsx
           reviews/page.tsx
           media/page.tsx
+          sessions/page.tsx
         (admin)/                  # Admin-only pages
           layout.tsx              # Admin guard (super_admin check)
           users/page.tsx
@@ -70,6 +71,7 @@ fsdk-starter/
 | MFA | `mfa_blp` | `useMfa` | `/mfa` |
 | Reviews | `reviews_blp` | `useReviews` | `/reviews` |
 | Media | `media_blp` | `mediaApi` | `/media` |
+| Sessions | `sessions_blp` | `useSessions` | `/sessions` |
 | Admin Users | `admin_session_blp` | `useAdmin` | `/users`, `/users/[id]` |
 | Audit | `audit_blp` | `useAudit` | `/audit` |
 | Invites | `invites_blp` | `useInvites` | `/invites` |
@@ -126,6 +128,8 @@ Turbopack cannot follow symlinks outside the project root. The frontend's `packa
 2. Add types, API client, and hook to `fsdk-ts` (see `fsdk-ts/ARCHITECTURE.md`)
 3. Add a page under `frontend/src/app/`
 4. Import the hook from `fsdk-ts` and wire it up
+
+Run `npm run typecheck` (`tsc --noEmit`) in `frontend/` to catch type errors. The frontend enforces types at build (`next.config` `ignoreBuildErrors` is `false`), so example-page drift from the fsdk-ts API fails the build.
 
 ## Tech Stack
 
