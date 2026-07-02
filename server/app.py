@@ -304,6 +304,24 @@ if os.getenv('ENABLE_BILLING', 'false').lower() == 'true':
     except ImportError:
         logger.warning('Billing domain not available in this foundation-sdk version')
 
+# RBAC for the (optional) tenancy/teams domain. Set unconditionally so that
+# flipping ENABLE_TENANCY=true works out of the box — the teams service fails
+# CLOSED (RuntimeError) on invite/role-change if app.config['RBAC'] is unset
+# (see foundation/teams/service.py create_invite / change_member_role). This is
+# a generic owner/admin/editor/viewer default; customize the permission strings
+# once you introduce your own require_permission() gates. Reference pattern:
+# blogmachine-deploy/blogmachine/config.py (BM_RBAC) + run.py app.config['RBAC'].
+from foundation.teams.rbac import RBACConfig
+app.config['RBAC'] = RBACConfig(
+    {
+        'owner':  ['*'],
+        'admin':  ['manage_members', 'manage_settings', 'view_dashboard'],
+        'editor': ['manage_content', 'view_dashboard'],
+        'viewer': ['view_dashboard'],
+    },
+    role_ranks={'owner': 40, 'admin': 30, 'editor': 20, 'viewer': 10},
+)
+
 if os.getenv('ENABLE_TENANCY', 'false').lower() == 'true':
     try:
         from foundation.teams.api import create_team_blueprint
