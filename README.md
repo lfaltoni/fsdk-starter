@@ -117,6 +117,7 @@ MFA, billing, and tenancy are env-gated. When their env vars are empty/false, th
 - **MFA** — shows "not configured" message when `MFA_HMAC_KEY` is unset
 - **Billing** — hidden from nav when `NEXT_PUBLIC_ENABLE_BILLING` is not `true`
 - **Media** — treats 404 on gallery as empty (no uploads yet)
+- **Tenancy/teams** — hidden until `ENABLE_TENANCY=true`. The teams domain fails **closed** on a post-H3 foundation: `create_invite()` / `change_member_role()` raise `RuntimeError` if `app.config['RBAC']` is unset. `server/app.py` therefore wires a generic `owner/admin/editor/viewer` `RBACConfig` **unconditionally** (harmless when the flag is off), so flipping `ENABLE_TENANCY=true` works out of the box. Customize the permission strings when you add your own `require_permission()` gates — see `foundation/teams/rbac.py` and the blogmachine `config.py` reference.
 
 ### Turbopack + fsdk-ts
 
