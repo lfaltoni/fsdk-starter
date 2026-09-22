@@ -158,6 +158,79 @@ storage_provider = LocalStorageProvider(
 )
 app.media_service = MediaService(storage_provider)
 
+# ----------------------------------------------------------------------------
+# 9a. Media authorization — REQUIRED. Do not delete; extend.
+# ----------------------------------------------------------------------------
+# The media endpoints take entity_type and entity_id straight from the request.
+# MediaService only enforces ownership when an owner_check predicate has been
+# injected — with none configured it returns early and ALLOWS the mutation
+# (foundation/media/services.py::_check_owner). Registering media_blp without
+# this block therefore lets ANY logged-in user upload to, delete from, reorder
+# and re-flag media on ANY entity they can name. That is OWASP API1 / BOLA.
+#
+# The registry below is the gate, and it is DENY-BY-DEFAULT: an entity_type
+# with no entry here cannot be mutated at all. When you add a media-bearing
+# model to your app, add its rule here. Forgetting to is a 403, never a hole.
+#
+# Rules to follow when you add one:
+#
+#   * Key on a real ownership column — a non-nullable FK to users, or a
+#     membership row. NEVER on audit metadata such as created_by_user_id: it
+#     is nullable, so it denies the real owner on every legacy row.
+#   * If your app has roles, membership alone is not the gate. A read-only
+#     role that resolves to the right org must still be refused a write.
+#   * Return False, never None or a truthy object — the tail below is what
+#     makes "I forgot" safe.
+#
+# A worked example (entity_type 'project', owned through a membership table
+# that carries a role):
+#
+#     def _user_owns_project(user_id, entity_id):
+#         membership = ProjectMember.query.filter_by(
+#             user_id=user_id, project_id=entity_id
+#         ).first()
+#         # membership.role is checked, not just membership's existence:
+#         # a 'viewer' belongs to the project but must not mutate its media.
+#         return membership is not None and membership.role in ('owner', 'editor')
+#
+#     MEDIA_OWNER_RULES = {'project': _user_owns_project}
+#
+# fsdk-starter itself registers NOTHING, and that is a finding rather than an
+# omission. It ships no media-bearing domain entity of its own: the only
+# entity_type its frontend names is 'demo_items' with a string entity_id
+# ('demo-1'), which cannot reach these routes at all — the blueprint's routes
+# are <int:entity_id> and the upload handler 400s on a non-integer. The one
+# FSDK entity a starter app might plausibly attach media to, the user, has a
+# TEXT uuid primary key and so cannot be addressed by an integer entity_id
+# either. There is no legitimate caller to preserve, so deny-all is the
+# correct starting state — not a placeholder.
+
+from typing import Callable
+
+# entity_type -> (user_id, entity_id) -> bool
+MEDIA_OWNER_RULES: dict[str, Callable[[str, int], bool]] = {}
+
+
+def media_owner_check(user_id: str, entity_type: str, entity_id: int) -> bool:
+    """Authorize a media mutation. Injected into MediaService below.
+
+    Called for every mutating media operation: upload, update, set-primary,
+    delete and reorder. Reads are not gated (the gallery endpoints are public).
+    """
+    rule = MEDIA_OWNER_RULES.get(entity_type)
+    if rule is None:
+        # Unknown entity_type — deny. This is the load-bearing line.
+        logger.warning(
+            'Media mutation refused: no ownership rule for entity_type=%r '
+            '(user=%s, entity_id=%s)',
+            entity_type, user_id, entity_id,
+        )
+        return False
+    return bool(rule(user_id, entity_id))
+
+
+MediaService.configure(owner_check=media_owner_check)
+
 # ============================================================================
 # 9b. Sessions (active session / device registry)
 # ============================================================================
@@ -255,6 +328,20 @@ api.register_blueprint(profile_blp)
 
 # Media
 from foundation.media.api.smorest_media_blueprint import media_blp
+
+# Fail loudly rather than silently serving an unauthorized media API. The
+# predicate is class-level state on MediaService, so deleting the configure()
+# call in section 9a would otherwise reintroduce the IDOR with no symptom at
+# all — every endpoint keeps returning 200/201, just for everybody. Reading the
+# private attribute is deliberate: the SDK exposes no public "is it wired?"
+# accessor, and a startup crash is the cheapest possible detector.
+if MediaService._owner_check is None:
+    raise RuntimeError(
+        'MediaService.configure(owner_check=...) was not called — refusing to '
+        'register media_blp. Without a predicate, MediaService allows every '
+        'authenticated user to mutate every entity\'s media. See section 9a.'
+    )
+
 api.register_blueprint(media_blp)
 
 # Reviews

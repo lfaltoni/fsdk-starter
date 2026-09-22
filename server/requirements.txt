@@ -1,3 +1,7 @@
 foundation-sdk
 flask-cors
 python-dotenv
+
+# Test-only. `pytest server/tests/` covers the media authorization gate
+# (see README § Media Authorization).
+pytest
