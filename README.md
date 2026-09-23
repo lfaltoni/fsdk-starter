@@ -111,6 +111,28 @@ fsdk-ts sends JWT Bearer tokens via `foundationRequest`. foundation-sdk blueprin
 
 If you remove this hook, all authenticated API calls from the frontend will fail with 401.
 
+### Media Authorization (`MEDIA_OWNER_RULES`) — read this before adding media
+
+The media endpoints take `entity_type` and `entity_id` straight from the request body/URL. `MediaService` only enforces ownership when an `owner_check` predicate has been injected; with none configured it **allows every mutation** (`foundation/media/services.py::_check_owner` returns early). Registering `media_blp` without configuring one lets any logged-in user upload to, delete from, reorder and re-flag media on any entity they can name — OWASP API1 / BOLA.
+
+`server/app.py` section 9a therefore defines a **deny-by-default registry**:
+
+```python
+MEDIA_OWNER_RULES: dict[str, Callable[[str, int], bool]] = {}
+MediaService.configure(owner_check=media_owner_check)
+```
+
+An `entity_type` with no entry cannot be mutated at all. When you add a media-bearing model, add its rule — forgetting to is a 403, never a hole. The registration site raises `RuntimeError` at startup if the `configure()` call goes missing, so the IDOR cannot come back silently.
+
+When you write a rule:
+- Key on a **real ownership column** — a non-nullable FK to users, or a membership row. Never on audit metadata such as `created_by_user_id`: it is nullable, so it denies the real owner on legacy rows.
+- If your app has roles, **membership alone is not the gate**. A read-only role that resolves to the right org must still be refused a write.
+- Return `False`, never `None`.
+
+The starter registers nothing, because it ships no media-bearing entity: the demo page's `entity_type='demo_items'` uses a string `entity_id` (`'demo-1'`) that cannot reach the `<int:entity_id>` routes, and `User`'s primary key is a TEXT uuid, so `entity_type='user'` is unaddressable too. Reads (the gallery GETs) are public and ungated by design — the predicate governs writes only.
+
+Tests: `server/tests/test_media_authorization.py` (run `server/.venv/bin/python -m pytest tests/` from `server/`). They are deliberately negative — a "the owner can upload" test passes identically with or without an authorization check — and cover every mutating endpoint across **both** auth channels, because `auth_required` tries the session cookie first and only falls through to JWT.
+
 ### Optional Domains
 
 MFA, billing, and tenancy are env-gated. When their env vars are empty/false, the blueprints are not registered and their endpoints return 404. The frontend pages handle this gracefully:
