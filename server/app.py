@@ -397,16 +397,9 @@ def patch_sdk_columns():
                 conn.execute(text(statement))
 
 
-def ensure_schema():
-    """Create missing tables, then add missing SDK columns to existing ones."""
-    db.create_all()
-    patch_sdk_columns()
-
-
-# Patch at import so every entry point (server, CLI flags, a WSGI server) sees
-# a schema that matches the models before its first query.
-with app.app_context():
-    patch_sdk_columns()
+# Run from the __main__ block before any entry point (server or CLI flag) makes
+# its first query. Deliberately not at import: the tests import this module and
+# must not ALTER whatever database .env points at.
 
 # ============================================================================
 # 14. Blueprint Registration
@@ -558,7 +551,7 @@ def index():
 def seed_admin():
     """Create a super_admin user if none exists."""
     with app.app_context():
-        ensure_schema()
+        db.create_all()
         from foundation.users.models import User
         admin = User.query.filter_by(platform_role='super_admin').first()
         if admin:
@@ -582,6 +575,9 @@ def seed_admin():
 # ============================================================================
 
 if __name__ == '__main__':
+    with app.app_context():
+        patch_sdk_columns()
+
     if '--seed-admin' in sys.argv:
         seed_admin()
         sys.exit(0)
@@ -589,7 +585,7 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5001))
 
     with app.app_context():
-        ensure_schema()
+        db.create_all()
 
     logger.info('=' * 50)
     logger.info(f'  {app.config["APP_NAME"]}')
