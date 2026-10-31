@@ -88,7 +88,9 @@ fsdk-starter/
 | `APP_NAME` | `FSDK Starter` | Branding in emails and API |
 | `GOOGLE_CLIENT_ID` | (empty) | Google SSO — empty disables it |
 | `MFA_HMAC_KEY` | (empty) | MFA secret — empty disables MFA |
-| `RESEND_API_KEY` | (empty) | Resend email — empty uses no-op |
+| `ENVIRONMENT` | `development` | `development`, `testing` or `production`; any other value refuses to boot |
+| `RESEND_API_KEY` | (empty) | Resend email. Empty: dev/testing log emails to the console; production refuses to boot |
+| `EMAIL_FROM` | `noreply@localhost` (dev) | From address for all email; required in production |
 | `ENABLE_BILLING` | `false` | Enable Stripe billing domain |
 | `ENABLE_TENANCY` | `false` | Enable teams/tenancy domain |
 | `CORS_ORIGINS` | `http://localhost:3000` | Allowed CORS origins |
