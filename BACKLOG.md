@@ -13,3 +13,7 @@ To do:
 - Document the upgrade flow: bump the version, run the DB upgrade, run the smoke test.
 
 Prompt: `~/GitHub/Projects/prompts/fsdk-distribution-planner.md`.
+
+## ENABLE_BILLING=true has no BillingService (found 2026-10-31, FSDK-BOOT fix)
+
+`server/app.py` registers `billing_blp` when `ENABLE_BILLING=true` but never attaches `app.billing_service`, so every billing endpoint raises AttributeError. Wire a `BillingService` (Stripe provider when `STRIPE_SECRET_KEY` is set) and declare `app.config['BILLING_PASSTHROUGH']` the way BlogMachine's `config.py` does before anyone turns billing on.

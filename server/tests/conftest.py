@@ -23,47 +23,16 @@ os.environ['DB_NAME'] = _TMP_DB
 os.environ['ENVIRONMENT'] = 'development'
 os.environ['APP_NAME'] = 'FSDK Starter Test'
 os.environ.pop('DATABASE_URL', None)
-os.environ['RESEND_API_KEY'] = 'test-resend-key-no-mail-is-sent-by-these-tests'
+# No RESEND_API_KEY: app.py then declares ConsoleEmailAdapter (dev/testing),
+# so no test can reach a real mail provider.
+os.environ['RESEND_API_KEY'] = ''
+os.environ.pop('EMAIL_FROM', None)
 os.environ['GOOGLE_CLIENT_ID'] = ''
 os.environ['MFA_HMAC_KEY'] = ''
 os.environ['ENABLE_BILLING'] = 'false'
 os.environ['ENABLE_TENANCY'] = 'false'
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# --- PRE-EXISTING BUG WORKAROUND (test-only, no production behaviour changed) --
-# `app.py` calls `configure_email(app)` with nothing in `app.config` naming a
-# mail transport, and the current foundation-sdk refuses to register a dead
-# adapter: it raises FoundationConfigurationError('email.adapter_dead') at
-# import. The starter therefore does not boot as shipped — a separate bug from
-# the media authorization hole these tests cover (blogmachine-deploy/run.py:218
-# shows the missing wiring). The SDK documents an explicit escape hatch for
-# "run without mail on purpose"; we take it here so the tests can import the
-# app. Remove this shim once app.py wires a real mail transport.
-import foundation.email as _fsdk_email  # noqa: E402
-from foundation.email.providers.console_adapter import ConsoleEmailAdapter  # noqa: E402
-
-_real_configure_email = _fsdk_email.configure_email
-_fsdk_email.configure_email = lambda app, adapter=None, provider=None: (
-    _real_configure_email(app, adapter=ConsoleEmailAdapter())
-)
-
-# The same "consumer has not caught up with the SDK's hardening" story repeats
-# for PROFILE_DATA_ALLOWED_KEYS: registering profile_blp raises
-# FoundationConfigurationError('users.profile_schema_undeclared') unless the app
-# declares it. app.py builds its Flask object at import time, so the only place
-# to seed config is Flask.__init__ itself.
-import flask  # noqa: E402
-
-_orig_flask_init = flask.Flask.__init__
-
-
-def _flask_init_with_test_config(self, *args, **kwargs):
-    _orig_flask_init(self, *args, **kwargs)
-    self.config.setdefault('PROFILE_DATA_ALLOWED_KEYS', {'name', 'bio'})
-
-
-flask.Flask.__init__ = _flask_init_with_test_config
 
 import app as starter_app  # noqa: E402
 

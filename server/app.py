@@ -75,8 +75,40 @@ configure_audit(app, app_id='fsdk-starter')
 # ============================================================================
 
 from foundation.email import configure_email
+from foundation.email.providers.console_adapter import ConsoleEmailAdapter
 
-configure_email(app)
+# foundation's configure_email() refuses to register an adapter that cannot send
+# (email.adapter_dead) or that has no default From address
+# (email.no_default_sender); in production it also refuses a sender with no
+# dotted domain (noreply@localhost). So the app decides its transport and sender
+# explicitly:
+#   * RESEND_API_KEY set     -> Resend
+#   * unset, dev / testing   -> ConsoleEmailAdapter (emails are LOGGED, not sent)
+#   * unset, production      -> refuse to boot
+# EMAIL_FROM is the From address for every adapter; production must set it.
+_environment = os.getenv('ENVIRONMENT', 'development').strip().lower()
+_email_from = os.getenv('EMAIL_FROM', '').strip()
+if not _email_from:
+    if _environment == 'production':
+        raise RuntimeError(
+            'EMAIL_FROM must be set in production (a sender on a domain verified '
+            'with your email provider, e.g. noreply@yourdomain.com)'
+        )
+    _email_from = 'noreply@localhost'
+app.config['EMAIL_DEFAULT_SENDER'] = _email_from   # Resend
+app.config['MAIL_DEFAULT_SENDER'] = _email_from    # Flask-Mail / console
+
+_resend_api_key = os.getenv('RESEND_API_KEY', '').strip()
+if _resend_api_key:
+    app.config['RESEND_API_KEY'] = _resend_api_key
+    configure_email(app)
+elif _environment == 'production':
+    raise RuntimeError(
+        'RESEND_API_KEY must be set in production: without it no email '
+        '(password reset, invites, MFA codes) is delivered'
+    )
+else:
+    configure_email(app, adapter=ConsoleEmailAdapter())
 
 # ============================================================================
 # 5. MFA (depends on email service)
@@ -307,6 +339,75 @@ from foundation.audit.models import AuditEntry  # noqa: F401
 from foundation.invites.models import PlatformInvite  # noqa: F401
 from foundation.sessions.models import UserSession  # noqa: F401
 
+# ----------------------------------------------------------------------------
+# 13a. Columns foundation-sdk added to tables an existing database already has
+# ----------------------------------------------------------------------------
+# db.create_all() creates missing TABLES but never adds a column to an existing
+# one. When foundation's models gain a column, every query on that model fails
+# against an older database ("no such column"), which takes the whole app down.
+# Each entry is added once, nullable, with no default and no backfill.
+# Fresh databases already have them (create_all builds from the models).
+SDK_COLUMN_PATCHES = [
+    # foundation-sdk 138c14f: chosen-vs-seeded password tri-state. NULL means
+    # "unknown" and the SDK reads it with `is True`, so nothing is forced on
+    # existing users.
+    ('users', 'must_change_password', 'BOOLEAN'),
+    # Older SDK columns that no consumer database here had been given either
+    # (found by diffing the models against the April dev database). Same hazard:
+    # login fails with "no such column: users.magic_link_nonce".
+    ('users', 'magic_link_nonce', 'VARCHAR(64)'),
+    ('user_profiles', 'slug', 'VARCHAR(100)'),
+    ('user_profiles', 'verified_phone', 'VARCHAR(20)'),
+    ('reviews', 'moderation_reason', 'TEXT'),
+    ('reviews', 'moderated_at', 'DATETIME'),
+    ('reviews', 'moderated_by', 'TEXT'),
+    ('review_replies', 'status', "VARCHAR(20) NOT NULL DEFAULT 'active'"),
+    ('review_replies', 'moderation_reason', 'TEXT'),
+    ('review_replies', 'moderated_at', 'DATETIME'),
+    ('review_replies', 'moderated_by', 'TEXT'),
+]
+
+# Indexes create_all would have built with those columns (the model declares
+# them unique / indexed). IF NOT EXISTS keeps this idempotent.
+SDK_INDEX_PATCHES = [
+    'CREATE UNIQUE INDEX IF NOT EXISTS ix_user_profiles_slug ON user_profiles (slug)',
+    'CREATE INDEX IF NOT EXISTS ix_user_profiles_verified_phone ON user_profiles (verified_phone)',
+]
+
+
+def patch_sdk_columns():
+    """Add any SDK_COLUMN_PATCHES column missing from an existing table."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    tables = set(inspector.get_table_names())
+    added = False
+    for table, column, col_type in SDK_COLUMN_PATCHES:
+        if table not in tables:
+            continue  # create_all builds it, with the column
+        if column in {c['name'] for c in inspector.get_columns(table)}:
+            continue
+        with db.engine.begin() as conn:
+            conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {column} {col_type}'))
+        logger.info(f'Added column {table}.{column}')
+        added = True
+    if added and 'user_profiles' in tables:
+        with db.engine.begin() as conn:
+            for statement in SDK_INDEX_PATCHES:
+                conn.execute(text(statement))
+
+
+def ensure_schema():
+    """Create missing tables, then add missing SDK columns to existing ones."""
+    db.create_all()
+    patch_sdk_columns()
+
+
+# Patch at import so every entry point (server, CLI flags, a WSGI server) sees
+# a schema that matches the models before its first query.
+with app.app_context():
+    patch_sdk_columns()
+
 # ============================================================================
 # 14. Blueprint Registration
 # ============================================================================
@@ -323,6 +424,12 @@ if app.config['GOOGLE_CLIENT_ID']:
     logger.info('Google SSO enabled')
 
 # User profile
+# The keys PUT /api/users/profile may store in profile_data. foundation requires
+# this declaration whenever profile_blp is registered
+# (users.profile_schema_undeclared at boot) and refuses undeclared keys with 422.
+# These are the fields the starter's profile page writes; add a key here when a
+# feature starts storing it.
+app.config['PROFILE_DATA_ALLOWED_KEYS'] = frozenset({'bio', 'phone'})
 from foundation.users.api.smorest_profile_blueprint import profile_blp
 api.register_blueprint(profile_blp)
 
@@ -451,7 +558,7 @@ def index():
 def seed_admin():
     """Create a super_admin user if none exists."""
     with app.app_context():
-        db.create_all()
+        ensure_schema()
         from foundation.users.models import User
         admin = User.query.filter_by(platform_role='super_admin').first()
         if admin:
@@ -482,7 +589,7 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5001))
 
     with app.app_context():
-        db.create_all()
+        ensure_schema()
 
     logger.info('=' * 50)
     logger.info(f'  {app.config["APP_NAME"]}')
